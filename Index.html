@@ -1,10 +1,10 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Quiz App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -45,10 +45,35 @@
             font-size: clamp(0.9em, 3vw, 1em);
         }
 
+        .hamburger {
+            display: none;
+            font-size: clamp(1.5em, 4vw, 1.8em);
+            padding: 10px 15px;
+            background: #4facfe;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .hamburger:hover {
+            background: #2196f3;
+            transform: scale(1.05);
+        }
+
         .nav-tabs {
             display: flex;
             background: #f8f9fa;
             border-bottom: 2px solid #e9ecef;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .nav-open {
+            transform: translateX(0);
+            opacity: 1;
+            display: flex;
         }
 
         .nav-tab {
@@ -295,6 +320,25 @@
 
         .option.incorrect .option-letter {
             background: #721c24;
+        }
+
+        .option-feedback {
+            margin-left: auto;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: clamp(0.7em, 2vw, 0.8em);
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .option-feedback.correct {
+            background: #28a745;
+            color: white;
+        }
+
+        .option-feedback.incorrect {
+            background: #dc3545;
+            color: white;
         }
 
         .quiz-controls {
@@ -563,6 +607,74 @@
             background: #dc3545;
         }
 
+        .topic-selection {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .topic-selection select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            font-size: clamp(0.9em, 3vw, 1em);
+            min-width: 150px;
+        }
+
+        .topic-selection select:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 5px rgba(79, 172, 254, 0.5);
+        }
+
+        .flashcard-container {
+            perspective: 1000px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 300px;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .flashcard-back {
+            background: #4facfe;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 5px;
@@ -586,7 +698,7 @@
                 grid-template-columns: 1fr;
             }
 
-            .quiz-controls {
+            .quiz-controls, .flashcard-controls {
                 flex-direction: column;
                 gap: 10px;
             }
@@ -627,12 +739,57 @@
             #questionSearch {
                 font-size: clamp(0.85em, 2.8vw, 0.95em);
             }
+
+            .flashcard {
+                height: 250px;
+            }
         }
 
         @media (max-width: 480px) {
             .container {
                 margin: 5px;
                 border-radius: 8px;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .nav-tabs {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 120px;
+                left: 0;
+                right: 0;
+                background: #f8f9fa;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                transform: translateX(-100%);
+                opacity: 0;
+                border-radius: 0 0 8px 8px;
+            }
+
+            .nav-tabs.nav-open {
+                display: flex;
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            .nav-tab {
+                padding: 15px;
+                border-bottom: 1px solid #e9ecef;
+                text-align: left;
+            }
+
+            .nav-tab:last-child {
+                border-bottom: none;
+            }
+
+            .nav-tab.active {
+                background: #4facfe;
+                color: white;
+                border-bottom-color: transparent;
             }
 
             .header {
@@ -666,7 +823,7 @@
                 font-size: clamp(0.75em, 2.5vw, 0.85em);
             }
 
-            .quiz-controls {
+            .quiz-controls, .flashcard-controls {
                 gap: 8px;
             }
 
@@ -699,6 +856,20 @@
                 height: 28px;
                 font-size: clamp(0.7em, 2.5vw, 0.8em);
             }
+
+            .topic-selection {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .topic-selection select {
+                width: 100%;
+                font-size: clamp(0.85em, 2.8vw, 0.95em);
+            }
+
+            .flashcard {
+                height: 200px;
+            }
         }
 
         .fade-in {
@@ -726,20 +897,20 @@
             <h1>📚 Interactive Quiz App</h1>
             <p>Test your knowledge with our comprehensive quiz system</p>
         </div>
-
+        <button class="hamburger" onclick="toggleNavMenu()">☰</button>
         <div class="nav-tabs">
-            <button class="nav-tab" onclick="showSection('home')">🏠 Home</button>
+            <button class="nav-tab active" onclick="showSection('home')">🏠 Home</button>
             <button class="nav-tab" onclick="showSection('analysis')">📊 Analysis</button>
             <button class="nav-tab" onclick="showSection('history')">📜 History</button>
             <button class="nav-tab" onclick="showSection('wrong-questions')">❌ Wrong Questions</button>
             <button class="nav-tab" onclick="showSection('hard-questions')">⭐ Hard Questions</button>
+            <button class="nav-tab" onclick="showSection('revision')">📝 Revision</button>
         </div>
-
         <div class="content">
             <!-- Home Section -->
             <div id="home" class="section active">
                 <div class="search-container" style="margin-bottom: 20px; padding: 10px;">
-                    <input type="text" id="questionSearch" placeholder="Search quizzes or questions (e.g., kangaroo, history)" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #e9ecef; font-size: clamp(0.9em, 3vw, 1em);">
+                    <input type="text" id="questionSearch" placeholder="Search quizzes or questions (e.g., kangaroo, history)">
                     <div id="searchResults" style="margin-top: 10px; display: none;"></div>
                 </div>
                 <div class="main-sections" id="mainSections"></div>
@@ -785,6 +956,16 @@
             <!-- Wrong Questions Section -->
             <div id="wrong-questions" class="section">
                 <h2>❌ Wrong Questions</h2>
+                <div class="topic-selection">
+                    <select id="wrongSectionSelect">
+                        <option value="">Select Section</option>
+                    </select>
+                    <select id="wrongSubsectionSelect" disabled>
+                        <option value="">Select Subsection</option>
+                    </select>
+                    <button class="btn btn-primary" id="wrongExportPdfBtn" disabled onclick="exportQuestions('wrong', 'pdf', document.getElementById('wrongSectionSelect').value, document.getElementById('wrongSubsectionSelect').value)">Export to PDF</button>
+                    <button class="btn btn-primary" id="wrongExportTxtBtn" disabled onclick="exportQuestions('wrong', 'txt', document.getElementById('wrongSectionSelect').value, document.getElementById('wrongSubsectionSelect').value)">Export to TXT</button>
+                </div>
                 <div id="wrongQuestionsContent">
                     <div class="analysis-card">
                         <div class="analysis-title">Incorrectly Answered Questions</div>
@@ -796,10 +977,58 @@
             <!-- Hard Questions Section -->
             <div id="hard-questions" class="section">
                 <h2>⭐ Hard Questions</h2>
+                <div class="topic-selection">
+                    <select id="hardSectionSelect">
+                        <option value="">Select Section</option>
+                    </select>
+                    <select id="hardSubsectionSelect" disabled>
+                        <option value="">Select Subsection</option>
+                    </select>
+                    <button class="btn btn-primary" id="hardExportPdfBtn" disabled onclick="exportQuestions('hard', 'pdf', document.getElementById('hardSectionSelect').value, document.getElementById('hardSubsectionSelect').value)">Export to PDF</button>
+                    <button class="btn btn-primary" id="hardExportTxtBtn" disabled onclick="exportQuestions('hard', 'txt', document.getElementById('hardSectionSelect').value, document.getElementById('hardSubsectionSelect').value)">Export to TXT</button>
+                </div>
                 <div id="hardQuestionsContent">
                     <div class="analysis-card">
                         <div class="analysis-title">Marked Hard Questions</div>
                         <div id="hardQuestionsList">No hard questions marked yet. Mark questions during quizzes!</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revision Section -->
+            <div id="revision" class="section">
+                <h2>📝 Revision Mode (Flashcards)</h2>
+                <div class="topic-selection">
+                    <select id="revisionSectionSelect">
+                        <option value="">Select Section</option>
+                    </select>
+                    <select id="revisionSubsectionSelect" disabled>
+                        <option value="">Select Subsection</option>
+                    </select>
+                    <select id="revisionTypeSelect">
+                        <option value="wrong">Wrong Questions</option>
+                        <option value="hard">Hard Questions</option>
+                    </select>
+                    <button class="btn btn-primary" id="startRevisionBtn" disabled onclick="startRevision()">Start Revision</button>
+                </div>
+                <div id="revisionContent" style="display: none;">
+                    <button class="btn btn-secondary back-btn" onclick="showSection('revision')">
+                        ← Back to Revision Selection
+                    </button>
+                    <div class="flashcard-container">
+                        <div class="flashcard" id="flashcard">
+                            <div class="flashcard-front">
+                                <div id="flashcardQuestion"></div>
+                            </div>
+                            <div class="flashcard-back">
+                                <div id="flashcardAnswer"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flashcard-controls">
+                        <button class="btn btn-secondary" id="prevFlashcardBtn" onclick="prevFlashcard()" disabled>Previous</button>
+                        <button class="btn btn-primary" id="flipFlashcardBtn" onclick="flipFlashcard()">Flip</button>
+                        <button class="btn btn-primary" id="nextFlashcardBtn" onclick="nextFlashcard()">Next</button>
                     </div>
                 </div>
             </div>
@@ -819,11 +1048,8 @@
                             <div class="progress-fill" id="progressFill"></div>
                         </div>
                     </div>
-
                     <div class="question-text" id="questionText"></div>
-
                     <div class="options" id="optionsContainer"></div>
-
                     <div class="quiz-controls">
                         <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()" disabled>
                             Previous
@@ -20334,7 +20560,7 @@ Mauryan_Dynasty: [
             }  ,
         };
 
-       // Global variables
+          // Global variables
         let currentQuizData = [];
         let currentQuestionIndex = 0;
         let userAnswers = [];
@@ -20348,6 +20574,12 @@ Mauryan_Dynasty: [
         let recognition = null;
         let synth = null;
         let isVoiceActive = false;
+        let reattemptMode = false;
+        let autoSaveInterval = null;
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let currentFlashcardIndex = 0;
+        let flashcardData = [];
+        let isFlashcardFlipped = false;
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', function() {
@@ -20359,7 +20591,40 @@ Mauryan_Dynasty: [
             loadHardQuestions();
             initSearch();
             initVoiceMode();
+            initKeyboardNavigation();
+            initRevisionSelection();
+
+            // Save state on page unload
+            window.addEventListener('beforeunload', () => {
+                if (document.getElementById('quiz').classList.contains('active')) {
+                    saveQuizState();
+                }
+            });
         });
+
+        // Keyboard navigation
+        function initKeyboardNavigation() {
+            document.addEventListener('keydown', (e) => {
+                if (document.getElementById('quiz').classList.contains('active')) {
+                    if (e.key === 'ArrowRight' && !document.getElementById('nextBtn').disabled) {
+                        nextQuestion();
+                    } else if (e.key === 'ArrowLeft' && !document.getElementById('prevBtn').disabled) {
+                        previousQuestion();
+                    } else if (['1', '2', '3', '4'].includes(e.key) && (!userAnswers[currentQuestionIndex] || reattemptMode)) {
+                        const optionMap = { '1': 'a', '2': 'b', '3': 'c', '4': 'd' };
+                        selectAnswer(optionMap[e.key]);
+                    }
+                } else if (document.getElementById('revision').classList.contains('active') && document.getElementById('revisionContent').style.display === 'block') {
+                    if (e.key === 'ArrowRight' && !document.getElementById('nextFlashcardBtn').disabled) {
+                        nextFlashcard();
+                    } else if (e.key === 'ArrowLeft' && !document.getElementById('prevFlashcardBtn').disabled) {
+                        prevFlashcard();
+                    } else if (e.key === ' ') {
+                        flipFlashcard();
+                    }
+                }
+            });
+        }
 
         // Voice-Activated Answers
         function initVoiceMode() {
@@ -20393,7 +20658,7 @@ Mauryan_Dynasty: [
             } else {
                 document.getElementById('voiceBtn').disabled = true;
                 document.getElementById('voiceBtn').textContent = '🎤 Voice Mode: Unavailable';
-                alert('Voice recognition is not supported in this browser.');
+                alert('Voice recognition is not supported in this browser. Try using Chrome.');
             }
 
             synth = window.speechSynthesis;
@@ -20684,6 +20949,11 @@ Mauryan_Dynasty: [
         }
 
         // Navigation functions
+        function toggleNavMenu() {
+            const navTabs = document.querySelector('.nav-tabs');
+            navTabs.classList.toggle('nav-open');
+        }
+
         function showSection(sectionId) {
             if (document.getElementById('quiz').classList.contains('active')) {
                 saveQuizState();
@@ -20713,6 +20983,19 @@ Mauryan_Dynasty: [
 
             if (targetTab) {
                 targetTab.classList.add('active');
+            }
+
+            if (window.innerWidth <= 480) {
+                document.querySelector('.nav-tabs').classList.remove('nav-open');
+            }
+
+            if (sectionId === 'wrong-questions') {
+                loadWrongQuestions();
+            } else if (sectionId === 'hard-questions') {
+                loadHardQuestions();
+            } else if (sectionId === 'revision') {
+                initRevisionSelection();
+                document.getElementById('revisionContent').style.display = 'none';
             }
         }
 
@@ -20763,6 +21046,7 @@ Mauryan_Dynasty: [
                 currentQuestionIndex = 0;
                 userAnswers = new Array(currentQuizData.length).fill(null);
                 quizStartTime = new Date();
+                reattemptMode = false;
             } else {
                 loadSavedQuizState();
                 if (!isWrongQuestionsQuiz && !isHardQuestionsQuiz && quizState.section === section && quizState.subsection === subsection) {
@@ -20774,7 +21058,12 @@ Mauryan_Dynasty: [
             document.getElementById('totalQuestions').textContent = currentQuizData.length;
             updateQuestionNavigator();
             loadQuestion();
+            initSwipeGestures();
             saveQuizState();
+
+            // Start auto-save interval
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            autoSaveInterval = setInterval(saveQuizState, 10000); // Save every 10 seconds
         }
 
         function loadQuestion() {
@@ -20801,11 +21090,27 @@ Mauryan_Dynasty: [
                 if (userAnswers[currentQuestionIndex] === key) {
                     optionDiv.classList.add('selected');
                 }
-                optionDiv.onclick = () => selectAnswer(key);
+                if (userAnswers[currentQuestionIndex] && !reattemptMode) {
+                    optionDiv.style.pointerEvents = 'none';
+                    optionDiv.style.opacity = '0.6';
+                } else {
+                    optionDiv.onclick = () => selectAnswer(key);
+                }
                 optionDiv.innerHTML = `
                     <div class="option-letter">${key.toUpperCase()}</div>
                     <div>${value}</div>
+                    <span class="option-feedback"></span>
                 `;
+                if (userAnswers[currentQuestionIndex] && !reattemptMode) {
+                    const feedbackSpan = optionDiv.querySelector('.option-feedback');
+                    if (key === question.correct) {
+                        feedbackSpan.textContent = 'Correct';
+                        feedbackSpan.classList.add('correct');
+                    } else if (key === userAnswers[currentQuestionIndex]) {
+                        feedbackSpan.textContent = 'Incorrect';
+                        feedbackSpan.classList.add('incorrect');
+                    }
+                }
                 optionsContainer.appendChild(optionDiv);
             });
 
@@ -20822,6 +21127,17 @@ Mauryan_Dynasty: [
             hardToggle.textContent = isMarked ? 'Unmark Hard' : 'Mark as Hard';
             hardToggle.onclick = () => toggleHardQuestion(question);
 
+            let reattemptToggle = document.getElementById('reattemptToggle');
+            if (!reattemptToggle) {
+                reattemptToggle = document.createElement('div');
+                reattemptToggle.id = 'reattemptToggle';
+                reattemptToggle.className = 'hard-toggle';
+                questionHeader.appendChild(reattemptToggle);
+            }
+            reattemptToggle.className = `hard-toggle ${reattemptMode ? 'marked' : ''}`;
+            reattemptToggle.innerHTML = `${reattemptMode ? '🔄 Reattempt: On' : '🔄 Reattempt: Off'}`;
+            reattemptToggle.onclick = toggleReattemptMode;
+
             document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
             document.getElementById('nextBtn').disabled = !userAnswers[currentQuestionIndex];
             document.getElementById('skipBtn').disabled = false;
@@ -20833,19 +21149,45 @@ Mauryan_Dynasty: [
             if (isVoiceActive) {
                 readQuestionAndOptions();
             }
+            saveQuizState();
+        }
+
+        function toggleReattemptMode() {
+            reattemptMode = !reattemptMode;
+            const reattemptToggle = document.getElementById('reattemptToggle');
+            reattemptToggle.className = `hard-toggle ${reattemptMode ? 'marked' : ''}`;
+            reattemptToggle.innerHTML = `${reattemptMode ? '🔄 Reattempt: On' : '🔄 Reattempt: Off'}`;
+            loadQuestion();
         }
 
         function selectAnswer(selectedOption) {
+            if (!reattemptMode && userAnswers[currentQuestionIndex]) return;
+
             userAnswers[currentQuestionIndex] = selectedOption;
             saveQuizState();
 
             const options = document.querySelectorAll('.option');
             options.forEach(option => {
-                option.classList.remove('selected');
+                option.classList.remove('selected', 'correct', 'incorrect');
                 const letter = option.querySelector('.option-letter').textContent.toLowerCase();
+                const feedbackSpan = option.querySelector('.option-feedback') || document.createElement('span');
+                feedbackSpan.className = 'option-feedback';
+                feedbackSpan.textContent = '';
                 if (letter === selectedOption) {
                     option.classList.add('selected');
                     option.classList.add('slide-in');
+                    const isCorrect = selectedOption === currentQuizData[currentQuestionIndex].correct;
+                    feedbackSpan.textContent = isCorrect ? 'Correct' : 'Incorrect';
+                    feedbackSpan.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    if (!option.contains(feedbackSpan)) {
+                        option.appendChild(feedbackSpan);
+                    }
+                } else if (letter === currentQuizData[currentQuestionIndex].correct) {
+                    feedbackSpan.textContent = 'Correct';
+                    feedbackSpan.classList.add('correct');
+                    if (!option.contains(feedbackSpan)) {
+                        option.appendChild(feedbackSpan);
+                    }
                 }
             });
 
@@ -20858,38 +21200,22 @@ Mauryan_Dynasty: [
             if (isCorrect && Math.random() > 0.7) {
                 setTimeout(() => createMiniConfetti(options.find(o =>
                     o.querySelector('.option-letter').textContent.toLowerCase() === selectedOption
-                )), 500);
+                )), 1000);
             }
 
-            setTimeout(() => {
-                showAnswerFeedback();
-            }, 500);
-        }
+            if (!isCorrect && !isWrongQuestionsQuiz && !isHardQuestionsQuiz) {
+                saveWrongQuestions();
+            }
 
-        function showAnswerFeedback() {
-            const question = currentQuizData[currentQuestionIndex];
-            const options = document.querySelectorAll('.option');
+            saveQuizState();
 
-            options.forEach(option => {
-                const letter = option.querySelector('.option-letter').textContent.toLowerCase();
-                option.style.pointerEvents = 'none';
-
-                if (letter === question.correct) {
-                    option.classList.add('correct');
-                } else if (letter === userAnswers[currentQuestionIndex]) {
-                    option.classList.add('incorrect');
-                }
-            });
-
-            document.getElementById('nextBtn').disabled = false;
-            updateQuestionNavigator();
             setTimeout(() => {
                 if (currentQuestionIndex < currentQuizData.length - 1) {
                     nextQuestion();
                 } else {
                     finishQuiz();
                 }
-            }, 2000);
+            }, 500);
         }
 
         function nextQuestion() {
@@ -20933,6 +21259,30 @@ Mauryan_Dynasty: [
                 loadQuestion();
                 saveQuizState();
             }
+        }
+
+        function initSwipeGestures() {
+            const quizContainer = document.querySelector('.quiz-container');
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const swipeThreshold = 50;
+
+            quizContainer.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+            }, { passive: true });
+
+            quizContainer.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].clientX;
+                const swipeDistance = touchEndX - touchStartX;
+
+                if (Math.abs(swipeDistance) > swipeThreshold) {
+                    if (swipeDistance < 0 && !document.getElementById('nextBtn').disabled) {
+                        nextQuestion();
+                    } else if (swipeDistance > 0 && !document.getElementById('prevBtn').disabled) {
+                        previousQuestion();
+                    }
+                }
+            }, { passive: true });
         }
 
         function updateQuestionNavigator() {
@@ -21007,7 +21357,7 @@ Mauryan_Dynasty: [
         }
 
         function saveQuizState() {
-            if (!isWrongQuestionsQuiz && !isHardQuestionsQuiz && currentSection && currentSubsection && currentQuizData.length > 0) {
+            if (currentSection && currentSubsection && currentQuizData.length > 0) {
                 quizState = {
                     section: currentSection,
                     subsection: currentSubsection,
@@ -21015,12 +21365,16 @@ Mauryan_Dynasty: [
                     answers: [...userAnswers],
                     startTime: quizStartTime ? quizStartTime.toISOString() : new Date().toISOString(),
                     quizData: [...currentQuizData],
-                    navigatorScroll: document.getElementById('questionNavigator')?.scrollLeft || 0
+                    navigatorScroll: document.getElementById('questionNavigator')?.scrollLeft || 0,
+                    reattemptMode: reattemptMode,
+                    isWrongQuestionsQuiz: isWrongQuestionsQuiz,
+                    isHardQuestionsQuiz: isHardQuestionsQuiz
                 };
                 try {
                     localStorage.setItem('quizState', JSON.stringify(quizState));
                 } catch (e) {
                     console.error('Error saving quiz state:', e);
+                    alert('Unable to save quiz progress due to storage limitations.');
                 }
             }
         }
@@ -21040,8 +21394,21 @@ Mauryan_Dynasty: [
                         newResumeBtn.className = 'btn btn-primary';
                         newResumeBtn.style.margin = '15px';
                         newResumeBtn.textContent = `Resume ${quizState.section} - ${quizState.subsection.replace('_', ' ')}`;
-                        newResumeBtn.onclick = () => startQuiz(quizState.section, quizState.subsection, true);
+                        newResumeBtn.onclick = () => startQuiz(quizState.section, quizState.subsection, true, quizState.isWrongQuestionsQuiz, quizState.isHardQuestionsQuiz);
                         document.getElementById('home').prepend(newResumeBtn);
+
+                        const quizSection = document.getElementById('quiz');
+                        const existingQuizResumeBtn = document.getElementById('quizResumeBtn');
+                        if (existingQuizResumeBtn) {
+                            existingQuizResumeBtn.remove();
+                        }
+                        const quizResumeBtn = document.createElement('button');
+                        quizResumeBtn.id = 'quizResumeBtn';
+                        quizResumeBtn.className = 'btn btn-primary';
+                        quizResumeBtn.style.margin = '15px';
+                        quizResumeBtn.textContent = `Resume Previous Quiz (${quizState.section} - ${quizState.subsection.replace('_', ' ')})`;
+                        quizResumeBtn.onclick = () => startQuiz(quizState.section, quizState.subsection, true, quizState.isWrongQuestionsQuiz, quizState.isHardQuestionsQuiz);
+                        quizSection.prepend(quizResumeBtn);
                     }
                 } catch (e) {
                     console.error('Error loading quiz state:', e);
@@ -21051,7 +21418,7 @@ Mauryan_Dynasty: [
         }
 
         function loadSavedQuizState() {
-            if (quizState.section === currentSection && quizState.subsection === currentSubsection && !isWrongQuestionsQuiz && !isHardQuestionsQuiz) {
+            if (quizState.section === currentSection && quizState.subsection === currentSubsection) {
                 currentQuestionIndex = Math.min(quizState.questionIndex || 0, currentQuizData.length - 1);
                 userAnswers = quizState.answers && quizState.answers.length === currentQuizData.length
                     ? [...quizState.answers]
@@ -21060,6 +21427,9 @@ Mauryan_Dynasty: [
                 currentQuizData = quizState.quizData && quizState.quizData.length > 0
                     ? [...quizState.quizData]
                     : currentQuizData;
+                reattemptMode = quizState.reattemptMode || false;
+                isWrongQuestionsQuiz = quizState.isWrongQuestionsQuiz || false;
+                isHardQuestionsQuiz = quizState.isHardQuestionsQuiz || false;
                 const navigator = document.getElementById('questionNavigator');
                 if (navigator && quizState.navigatorScroll) {
                     navigator.scrollLeft = quizState.navigatorScroll;
@@ -21111,39 +21481,75 @@ Mauryan_Dynasty: [
 
             if (Object.keys(wrongQuestions).length === 0) {
                 wrongQuestionsList.innerHTML = 'No incorrect questions yet. Take a quiz to track your mistakes!';
-                return;
-            }
-
-            let content = '';
-            Object.entries(wrongQuestions).forEach(([section, subsections]) => {
-                content += `<div class="analysis-card">
-                    <div class="analysis-title">${section}</div>`;
-                Object.entries(subsections).forEach(([subsection, questions]) => {
-                    content += `<div style="margin-bottom: 15px;">
-                        <h4 style="text-transform: capitalize; margin-bottom: 10px;">${subsection.replace('_', ' ')}</h4>
-                        <button class="btn btn-primary" style="margin-bottom: 10px;"
-                                onclick="startQuiz('${section}', '${subsection}', false, true)">
-                            Retake Wrong Questions
-                        </button>`;
-                    questions.forEach((question, index) => {
-                        content += `
-                            <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid #dc3545;">
-                                <div style="font-weight: 600;">Q${index + 1}: ${question.question}</div>
-                                <div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #6c757d;">
-                                    Your answer: ${question.userAnswer ? question.options[question.userAnswer] : 'Not answered'}
-                                </div>
-                                <div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #28a745;">
-                                    Correct answer: ${question.options[question.correct]}
-                                </div>
-                            </div>
-                        `;
+            } else {
+                let content = '';
+                Object.entries(wrongQuestions).forEach(([section, subsections]) => {
+                    content += `<div class="analysis-card">
+                        <div class="analysis-title">${section}</div>`;
+                    Object.entries(subsections).forEach(([subsection, questions]) => {
+                        content += `<div style="margin-bottom: 15px;">
+                            <h4 style="text-transform: capitalize; margin-bottom: 10px;">${subsection.replace('_', ' ')}</h4>
+                            <button class="btn btn-primary" style="margin-bottom: 10px;"
+                                    onclick="startQuiz('${section}', '${subsection}', false, true)">
+                                Retake Wrong Questions
+                            </button>`;
+                        questions.forEach((question, index) => {
+                            content += `
+                                <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid #dc3545;">
+                                    <div style="font-weight: 600;">Q${index +1}: ${question.question}</div>
+                                <div>Your Answer: ${question.options[question.userAnswer] || 'None'} (Incorrect)</div>
+                                <div>Correct Answer: ${question.options[question.correct]}</div>
+                            </div>`;
+                        });
+                        content += `</div>`;
                     });
                     content += `</div>`;
                 });
-                content += `</div>`;
+                wrongQuestionsList.innerHTML = content;
+            }
+
+            // Update section and subsection selectors
+            const sectionSelect = document.getElementById('wrongSectionSelect');
+            const subsectionSelect = document.getElementById('wrongSubsectionSelect');
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            Object.keys(wrongQuestions).forEach(section => {
+                sectionSelect.innerHTML += `<option value="${section}">${section}</option>`;
             });
 
-            wrongQuestionsList.innerHTML = content;
+            sectionSelect.onchange = () => {
+                subsectionSelect.disabled = true;
+                subsectionSelect.innerHTML = '<option value="">Select Subsection</option>';
+                document.getElementById('wrongExportPdfBtn').disabled = true;
+                document.getElementById('wrongExportTxtBtn').disabled = true;
+                if (sectionSelect.value && wrongQuestions[sectionSelect.value]) {
+                    subsectionSelect.disabled = false;
+                    Object.keys(wrongQuestions[sectionSelect.value]).forEach(subsection => {
+                        subsectionSelect.innerHTML += `<option value="${subsection}">${subsection.replace('_', ' ')}</option>`;
+                    });
+                }
+            };
+
+            subsectionSelect.onchange = () => {
+                const hasQuestions = sectionSelect.value && subsectionSelect.value && 
+                    wrongQuestions[sectionSelect.value]?.[subsectionSelect.value]?.length > 0;
+                document.getElementById('wrongExportPdfBtn').disabled = !hasQuestions;
+                document.getElementById('wrongExportTxtBtn').disabled = !hasQuestions;
+            };
+
+            // Trigger change to update subsections if a section is already selected
+            sectionSelect.dispatchEvent(new Event('change'));
+        }
+
+        function getHardQuestions(section, subsection) {
+            return hardQuestions[section]?.[subsection] || [];
+        }
+
+        function isQuestionMarkedHard(section, subsection, question) {
+            const sectionHardQuestions = hardQuestions[section]?.[subsection] || [];
+            return sectionHardQuestions.some(q => 
+                q.question === question.question && 
+                JSON.stringify(q.options) === JSON.stringify(question.options)
+            );
         }
 
         function toggleHardQuestion(question) {
@@ -21154,546 +21560,505 @@ Mauryan_Dynasty: [
                 hardQuestions[currentSection][currentSubsection] = [];
             }
 
-            const index = hardQuestions[currentSection][currentSubsection].findIndex(
-                q => q.question === question.question && JSON.stringify(q.options) === JSON.stringify(question.options)
-            );
-
-            const hardToggle = document.getElementById('hardToggle');
-            if (index === -1) {
-                hardQuestions[currentSection][currentSubsection].push({ ...question });
-                hardToggle.classList.add('marked');
-                hardToggle.textContent = 'Unmark Hard';
+            const isMarked = isQuestionMarkedHard(currentSection, currentSubsection, question);
+            if (isMarked) {
+                hardQuestions[currentSection][currentSubsection] = 
+                    hardQuestions[currentSection][currentSubsection].filter(q => 
+                        q.question !== question.question || 
+                        JSON.stringify(q.options) !== JSON.stringify(question.options)
+                    );
             } else {
-                hardQuestions[currentSection][currentSubsection].splice(index, 1);
-                hardToggle.classList.remove('marked');
-                hardToggle.textContent = 'Mark as Hard';
+                hardQuestions[currentSection][currentSubsection].push({ ...question });
             }
 
-            localStorage.setItem('hardQuestions', JSON.stringify(hardQuestions));
+            try {
+                localStorage.setItem('hardQuestions', JSON.stringify(hardQuestions));
+            } catch (e) {
+                console.error('Error saving hard questions:', e);
+            }
+
+            const hardToggle = document.getElementById('hardToggle');
+            hardToggle.className = `hard-toggle ${!isMarked ? 'marked' : ''}`;
+            hardToggle.textContent = !isMarked ? 'Unmark Hard' : 'Mark as Hard';
             loadHardQuestions();
-        }
-
-        function isQuestionMarkedHard(section, subsection, question) {
-            return hardQuestions[section]?.[subsection]?.some(
-                q => q.question === question.question && JSON.stringify(q.options) === JSON.stringify(question.options)
-            ) || false;
-        }
-
-        function getHardQuestions(section, subsection) {
-            return hardQuestions[section]?.[subsection] || [];
         }
 
         function loadHardQuestions() {
             const hardQuestionsList = document.getElementById('hardQuestionsList');
-
             if (Object.keys(hardQuestions).length === 0) {
                 hardQuestionsList.innerHTML = 'No hard questions marked yet. Mark questions during quizzes!';
-                return;
-            }
-
-            let content = '';
-            Object.entries(hardQuestions).forEach(([section, subsections]) => {
-                content += `<div class="analysis-card">
-                    <div class="analysis-title">${section}</div>`;
-                Object.entries(subsections).forEach(([subsection, questions]) => {
-                    content += `<div style="margin-bottom: 15px;">
-                        <h4 style="text-transform: capitalize; margin-bottom: 10px;">${subsection.replace('_', ' ')}</h4>
-                        <button class="btn btn-primary" style="margin-bottom: 10px;"
-                                onclick="startQuiz('${section}', '${subsection}', false, false, true)">
-                            Retake Hard Questions
-                        </button>`;
-                    questions.forEach((question, index) => {
-                        content += `
-                            <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid #ffc107;">
-                                <div style="font-weight: 600;">Q${index + 1}: ${question.question}</div>
-                                <div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #28a745;">
-                                    Correct answer: ${question.options[question.correct]}
-                                </div>
-                            </div>
-                        `;
+            } else {
+                let content = '';
+                Object.entries(hardQuestions).forEach(([section, subsections]) => {
+                    content += `<div class="analysis-card">
+                        <div class="analysis-title">${section}</div>`;
+                    Object.entries(subsections).forEach(([subsection, questions]) => {
+                        content += `<div style="margin-bottom: 15px;">
+                            <h4 style="text-transform: capitalize; margin-bottom: 10px;">${subsection.replace('_', ' ')}</h4>
+                            <button class="btn btn-primary" style="margin-bottom: 10px;"
+                                    onclick="startQuiz('${section}', '${subsection}', false, false, true)">
+                                Retake Hard Questions
+                            </button>`;
+                        questions.forEach((question, index) => {
+                            content += `
+                                <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid #ff9800;">
+                                    <div style="font-weight: 600;">Q${index + 1}: ${question.question}</div>
+                                    <div>Correct Answer: ${question.options[question.correct]}</div>
+                                </div>`;
+                        });
+                        content += `</div>`;
                     });
                     content += `</div>`;
                 });
-                content += `</div>`;
+                hardQuestionsList.innerHTML = content;
+            }
+
+            // Update section and subsection selectors
+            const sectionSelect = document.getElementById('hardSectionSelect');
+            const subsectionSelect = document.getElementById('hardSubsectionSelect');
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            Object.keys(hardQuestions).forEach(section => {
+                sectionSelect.innerHTML += `<option value="${section}">${section}</option>`;
             });
 
-            hardQuestionsList.innerHTML = content;
-        }
-
-        function finishQuiz() {
-            const score = calculateScore();
-            const percentage = Math.round((score / currentQuizData.length) * 100);
-
-            if (!isWrongQuestionsQuiz && !isHardQuestionsQuiz) {
-                saveAttempt(score, percentage);
-                saveWrongQuestions();
-            }
-            localStorage.removeItem('quizState');
-            showResults(score, percentage);
-        }
-
-        function calculateScore() {
-            let score = 0;
-            userAnswers.forEach((answer, index) => {
-                if (answer === currentQuizData[index].correct) {
-                    score++;
+            sectionSelect.onchange = () => {
+                subsectionSelect.disabled = true;
+                subsectionSelect.innerHTML = '<option value="">Select Subsection</option>';
+                document.getElementById('hardExportPdfBtn').disabled = true;
+                document.getElementById('hardExportTxtBtn').disabled = true;
+                if (sectionSelect.value && hardQuestions[sectionSelect.value]) {
+                    subsectionSelect.disabled = false;
+                    Object.keys(hardQuestions[sectionSelect.value]).forEach(subsection => {
+                        subsectionSelect.innerHTML += `<option value="${subsection}">${subsection.replace('_', ' ')}</option>`;
+                    });
                 }
-            });
-            return score;
-        }
-
-        function showResults(score, percentage) {
-            const grade = getGrade(percentage);
-            const motivationalMessage = getMotivationalMessage(percentage);
-
-            document.getElementById('finalScore').textContent = `${score}/${currentQuizData.length} (${percentage}%)`;
-
-            const resultDetails = document.getElementById('resultDetails');
-            resultDetails.innerHTML = `
-                <div class="analysis-card" style="text-align: center; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
-                    <div style="font-size: clamp(1.2em, 3.5vw, 1.4em); margin-bottom: 8px;">${motivationalMessage}</div>
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">Performance Grade: ${grade}</div>
-                    <p>You scored ${score} out of ${currentQuizData.length} questions correctly.</p>
-                    <p>Time taken: ${calculateTimeTaken()}</p>
-                    <p>Section: ${currentSection} - ${currentSubsection.replace('_', ' ')}</p>
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">Question Analysis</div>
-                    ${generateQuestionAnalysis()}
-                </div>
-            `;
-
-            if (percentage >= 80) {
-                setTimeout(() => celebrateCompletion(percentage), 500);
-            }
-
-            showSection('results');
-        }
-
-        function getGrade(percentage) {
-            if (percentage >= 90) return 'A+';
-            if (percentage >= 80) return 'A';
-            if (percentage >= 70) return 'B';
-            if (percentage >= 60) return 'C';
-            if (percentage >= 50) return 'D';
-            return 'F';
-        }
-
-        function calculateTimeTaken() {
-            const endTime = new Date();
-            const timeTaken = Math.round((endTime - quizStartTime) / 1000);
-            const minutes = Math.floor(timeTaken / 60);
-            const seconds = timeTaken % 60;
-            return `${minutes}m ${seconds}s`;
-        }
-
-        function generateQuestionAnalysis() {
-            let analysis = '';
-            currentQuizData.forEach((question, index) => {
-                const userAnswer = userAnswers[index];
-                const isCorrect = userAnswer === question.correct;
-                const status = isCorrect ? 'Correct' : 'Incorrect';
-                const statusClass = isCorrect ? 'badge-success' : 'badge-danger';
-
-                analysis += `
-                    <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid ${isCorrect ? '#28a745' : '#dc3545'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600;">Q${index + 1}</span>
-                            <span class="badge ${statusClass}">${status}</span>
-                        </div>
-                        <div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #6c757d;">
-                            Your answer: ${userAnswer ? question.options[userAnswer] : 'Not answered'}
-                        </div>
-                        ${!isCorrect ? `<div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #28a745;">
-                            Correct answer: ${question.options[question.correct]}
-                        </div>` : ''}
-                    </div>
-                `;
-            });
-            return analysis;
-        }
-
-        function saveAttempt(score, percentage) {
-            const attempt = {
-                id: Date.now(),
-                date: new Date().toLocaleDateString(),
-                section: currentSection,
-                subsection: currentSubsection,
-                score: score,
-                total: currentQuizData.length,
-                percentage: percentage,
-                grade: getGrade(percentage),
-                timeTaken: calculateTimeTaken(),
-                answers: [...userAnswers],
-                questions: [...currentQuizData]
             };
 
-            let attempts = JSON.parse(localStorage.getItem('quizAttempts')) || [];
-            attempts.push(attempt);
-            localStorage.setItem('quizAttempts', JSON.stringify(attempts));
+            subsectionSelect.onchange = () => {
+                const hasQuestions = sectionSelect.value && subsectionSelect.value && 
+                    hardQuestions[sectionSelect.value]?.[subsectionSelect.value]?.length > 0;
+                document.getElementById('hardExportPdfBtn').disabled = !hasQuestions;
+                document.getElementById('hardExportTxtBtn').disabled = !hasQuestions;
+            };
 
+            sectionSelect.dispatchEvent(new Event('change'));
+        }
+
+        function exportQuestions(type, format, section, subsection) {
+            const questions = type === 'wrong' 
+                ? getWrongQuestions(section, subsection)
+                : getHardQuestions(section, subsection);
+
+            if (questions.length === 0) {
+                alert(`No ${type} questions available to export.`);
+                return;
+            }
+
+            if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(12);
+                doc.text(`${type.charAt(0).toUpperCase() + type.slice(1)} Questions - ${section} ${subsection.replace('_', ' ')}`, 10, 10);
+                let y = 20;
+
+                questions.forEach((q, index) => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 10;
+                    }
+                    doc.text(`${index + 1}. ${q.question}`, 10, y);
+                    y += 10;
+                    Object.entries(q.options).forEach(([key, value]) => {
+                        doc.text(`${key.toUpperCase()}: ${value}`, 15, y);
+                        y += 7;
+                    });
+                    doc.text(`Correct Answer: ${q.options[q.correct]}`, 15, y);
+                    if (type === 'wrong') {
+                        doc.text(`Your Answer: ${q.options[q.userAnswer] || 'None'}`, 15, y + 7);
+                        y += 14;
+                    } else {
+                        y += 10;
+                    }
+                });
+
+                doc.save(`${type}_questions_${section}_${subsection}.pdf`);
+            } else if (format === 'txt') {
+                let textContent = `${type.charAt(0).toUpperCase() + type.slice(1)} Questions - ${section} ${subsection.replace('_', ' ')}\n\n`;
+                questions.forEach((q, index) => {
+                    textContent += `${index + 1}. ${q.question}\n`;
+                    Object.entries(q.options).forEach(([key, value]) => {
+                        textContent += `${key.toUpperCase()}: ${value}\n`;
+                    });
+                    textContent += `Correct Answer: ${q.options[q.correct]}\n`;
+                    if (type === 'wrong') {
+                        textContent += `Your Answer: ${q.options[q.userAnswer] || 'None'}\n`;
+                    }
+                    textContent += '\n';
+                });
+
+                const blob = new Blob([textContent], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `${type}_questions_${section}_${subsection}.txt`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+            }
+        }
+
+        function saveQuizHistory(score, total, percentage, grade, minutes, seconds) {
+            const quizHistory = JSON.parse(localStorage.getItem('quizHistory')) || [];
+            quizHistory.push({
+                date: new Date().toLocaleString(),
+                section: currentSection,
+                subsection: currentSubsection,
+                score,
+                total,
+                percentage,
+                grade,
+                timeTaken: `${minutes}m ${seconds}s`
+            });
+            try {
+                localStorage.setItem('quizHistory', JSON.stringify(quizHistory));
+            } catch (e) {
+                console.error('Error saving quiz history:', e);
+            }
             loadHistory();
             updateAnalysis();
         }
 
         function loadHistory() {
-            const attempts = JSON.parse(localStorage.getItem('quizAttempts')) || [];
-            const tableBody = document.getElementById('historyTableBody');
+            const quizHistory = JSON.parse(localStorage.getItem('quizHistory')) || [];
+            const historyTableBody = document.getElementById('historyTableBody');
+            historyTableBody.innerHTML = '';
 
-            if (attempts.length === 0) {
-                tableBody.innerHTML = `
+            if (quizHistory.length === 0) {
+                historyTableBody.innerHTML = `
                     <tr>
                         <td colspan="6" style="text-align: center; color: #6c757d; padding: 30px;">
                             No quiz attempts yet. Start a quiz to see your history!
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
                 return;
             }
 
-            tableBody.innerHTML = '';
-            attempts.reverse().forEach((attempt, index) => {
-                const gradeClass = attempt.percentage >= 70 ? 'badge-success' :
-                                 attempt.percentage >= 50 ? 'badge-warning' : 'badge-danger';
-                const hasWrongQuestions = attempt.answers.some((answer, i) => answer && answer !== attempt.questions[i].correct);
-
-                tableBody.innerHTML += `
-                    <tr>
-                        <td>${attempt.date}</td>
-                        <td>${attempt.section}</td>
-                        <td>${attempt.subsection.replace('_', ' ')}</td>
-                        <td>${attempt.score}/${attempt.total} (${attempt.percentage}%)</td>
-                        <td><span class="badge ${gradeClass}">${attempt.grade}</span></td>
-                        <td>
-                            <button class="btn btn-primary" style="padding: 6px 10px; font-size: clamp(0.7em, 2vw, 0.8em); margin-right: 5px;"
-                                    onclick="retakeSpecificQuiz('${attempt.section}', '${attempt.subsection}')">
-                                Retake
-                            </button>
-                            <button class="btn btn-secondary" style="padding: 6px 10px; font-size: clamp(0.7em, 2vw, 0.8em); margin-right: 5px;"
-                                    onclick="viewAttemptDetails(${attempt.id})">
-                                Details
-                            </button>
-                            ${hasWrongQuestions ? `
-                            <button class="btn btn-danger" style="padding: 6px 10px; font-size: clamp(0.7em, 2vw, 0.8em);"
-                                    onclick="startQuiz('${attempt.section}', '${attempt.subsection}', false, true)">
-                                Retake Wrong
-                            </button>` : ''}
-                        </td>
-                    </tr>
+            quizHistory.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.section}</td>
+                    <td>${entry.subsection.replace('_', ' ')}</td>
+                    <td>${entry.score}/${entry.total} (${entry.percentage.toFixed(2)}%)</td>
+                    <td><span class="badge ${getGradeClass(entry.percentage)}">${entry.grade}</span></td>
+                    <td>
+                        <button class="btn btn-primary" onclick="startQuiz('${entry.section}', '${entry.subsection}')">
+                            Retake
+                        </button>
+                    </td>
                 `;
+                historyTableBody.appendChild(row);
             });
         }
 
-        function viewAttemptDetails(attemptId) {
-            const attempts = JSON.parse(localStorage.getItem('quizAttempts')) || [];
-            const attempt = attempts.find(a => a.id === attemptId);
-
-            if (!attempt) return;
-
-            const analysisContent = document.getElementById('analysisContent');
-            analysisContent.innerHTML = `
-                <button class="btn btn-secondary back-btn" onclick="showSection('history')">
-                    ← Back to History
-                </button>
-                <div class="analysis-card">
-                    <div class="analysis-title">Attempt Details - ${attempt.date}</div>
-                    <p>Section: ${attempt.section} - ${attempt.subsection.replace('_', ' ')}</p>
-                    <p>Score: ${attempt.score}/${attempt.total} (${attempt.percentage}%)</p>
-                    <p>Grade: ${attempt.grade}</p>
-                    <p>Time Taken: ${attempt.timeTaken}</p>
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">Question Analysis</div>
-                    ${generateAttemptAnalysis(attempt)}
-                </div>
-            `;
-
-            showSection('analysis');
-        }
-
-        function generateAttemptAnalysis(attempt) {
-            let analysis = '';
-            attempt.questions.forEach((question, index) => {
-                const userAnswer = attempt.answers[index];
-                const isCorrect = userAnswer === question.correct;
-                const status = isCorrect ? 'Correct' : 'Incorrect';
-                const statusClass = isCorrect ? 'badge-success' : 'badge-danger';
-
-                analysis += `
-                    <div style="margin-bottom: 12px; padding: 10px; border-left: 3px solid ${isCorrect ? '#28a745' : '#dc3545'};">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 600;">Q${index + 1}: ${question.question}</span>
-                            <span class="badge ${statusClass}">${status}</span>
-                        </div>
-                        <div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #6c757d;">
-                            Your answer: ${userAnswer ? question.options[userAnswer] : 'Not answered'}
-                        </div>
-                        ${!isCorrect ? `<div style="margin-top: 5px; font-size: clamp(0.8em, 2.5vw, 0.9em); color: #28a745;">
-                            Correct answer: ${question.options[question.correct]}
-                        </div>` : ''}
-                    </div>
-                `;
-            });
-            return analysis;
+        function getGradeClass(percentage) {
+            if (percentage >= 90) return 'badge-success';
+            if (percentage >= 80) return 'badge-success';
+            if (percentage >= 70) return 'badge-warning';
+            return 'badge-danger';
         }
 
         function updateAnalysis() {
-            const attempts = JSON.parse(localStorage.getItem('quizAttempts')) || [];
-            const analysisContent = document.getElementById('overallStats');
+            const quizHistory = JSON.parse(localStorage.getItem('quizHistory')) || [];
+            const wrongQuestions = JSON.parse(localStorage.getItem('wrongQuestions')) || {};
+            const hardQuestions = JSON.parse(localStorage.getItem('hardQuestions')) || {};
 
-            if (attempts.length === 0) {
-                analysisContent.innerHTML = 'Take a quiz to see your analysis!';
-                return;
-            }
+            const totalQuizzes = quizHistory.length;
+            const totalQuestions = quizHistory.reduce((sum, entry) => sum + entry.total, 0);
+            const totalCorrect = quizHistory.reduce((sum, entry) => sum + entry.score, 0);
+            const avgScore = totalQuizzes > 0 ? ((totalCorrect / totalQuestions) * 100).toFixed(2) : 0;
+            const totalWrong = Object.values(wrongQuestions).reduce((sum, sections) => 
+                sum + Object.values(sections).reduce((subSum, qs) => subSum + qs.length, 0), 0);
+            const totalHard = Object.values(hardQuestions).reduce((sum, sections) => 
+                sum + Object.values(sections).reduce((subSum, qs) => subSum + qs.length, 0), 0);
 
-            const totalAttempts = attempts.length;
-            const totalQuestions = attempts.reduce((sum, attempt) => sum + attempt.total, 0);
-            const totalCorrect = attempts.reduce((sum, attempt) => sum + attempt.score, 0);
-            const overallPercentage = Math.round((totalCorrect / totalQuestions) * 100);
-            const averageScore = Math.round(attempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / totalAttempts);
-            const bestScore = Math.max(...attempts.map(a => a.percentage));
-            const worstScore = Math.min(...attempts.map(a => a.percentage));
-            const recentAttempts = attempts.slice(-3);
-            const improvementTrend = recentAttempts.length > 1 ?
-                recentAttempts[recentAttempts.length - 1].percentage - recentAttempts[0].percentage : 0;
-
-            const sectionStats = {};
-            attempts.forEach(attempt => {
-                const key = `${attempt.section}-${attempt.subsection}`;
-                if (!sectionStats[key]) {
-                    sectionStats[key] = {
-                        section: attempt.section,
-                        subsection: attempt.subsection,
-                        attempts: 0,
-                        totalScore: 0,
-                        bestScore: 0
-                    };
-                }
-                sectionStats[key].attempts++;
-                sectionStats[key].totalScore += attempt.percentage;
-                sectionStats[key].bestScore = Math.max(sectionStats[key].bestScore, attempt.percentage);
-            });
-
-            let sectionAnalysis = '';
-            Object.values(sectionStats).forEach(stat => {
-                const avgScore = Math.round(stat.totalScore / stat.attempts);
-                const performanceClass = avgScore >= 70 ? 'badge-success' :
-                                       avgScore >= 50 ? 'badge-warning' : 'badge-danger';
-
-                sectionAnalysis += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">
-                        <div>
-                            <strong>${stat.section} - ${stat.subsection.replace('_', ' ')}</strong>
-                            <div style="font-size: clamp(0.8em, 2.5vw, 0.9em); color: #6c757d;">${stat.attempts} attempt(s)</div>
-                        </div>
-                        <div style="text-align: right;">
-                            <span class="badge ${performanceClass}">Avg: ${avgScore}%</span>
-                            <div style="font-size: clamp(0.7em, 2vw, 0.8em); margin-top: 5px;">Best: ${stat.bestScore}%</div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            analysisContent.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div style="background: #4facfe; color: white; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: clamp(1.5em, 4vw, 1.8em); font-weight: bold;">${totalAttempts}</div>
-                        <div>Total Attempts</div>
-                    </div>
-                    <div style="background: #28a745; color: white; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: clamp(1.5em, 4vw, 1.8em); font-weight: bold;">${overallPercentage}%</div>
-                        <div>Overall Accuracy</div>
-                    </div>
-                    <div style="background: #17a2b8; color: white; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: clamp(1.5em, 4vw, 1.8em); font-weight: bold;">${averageScore}%</div>
-                        <div>Average Score</div>
-                    </div>
-                    <div style="background: #ffc107; color: white; padding: 15px; border-radius: 8px; text-align: center;">
-                        <div style="font-size: clamp(1.5em, 4vw, 1.8em); font-weight: bold;">${bestScore}%</div>
-                        <div>Best Score</div>
-                    </div>
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">📈 Performance Trend</div>
-                    <div style="padding: 12px; background: ${improvementTrend > 0 ? '#d4edda' : improvementTrend < 0 ? '#f8d7da' : '#e2e3e5'};
-                                border-radius: 5px; margin-top: 8px;">
-                        ${improvementTrend > 0 ?
-                            `🔥 Great! You've improved by ${improvementTrend}% in recent attempts!` :
-                            improvementTrend < 0 ?
-                            `📚 Keep practicing! Recent performance dipped by ${Math.abs(improvementTrend)}%` :
-                            `📊 Your performance has been consistent in recent attempts.`
-                        }
-                    </div>
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">📊 Section-wise Performance</div>
-                    ${sectionAnalysis}
-                </div>
-                <div class="analysis-card">
-                    <div class="analysis-title">🎯 Recommendations</div>
-                    <ul style="margin-top: 8px; padding-left: 20px;">
-                        ${averageScore < 70 ? '<li>Focus on weak areas and retake quizzes to improve understanding</li>' : ''}
-                        ${Object.values(sectionStats).some(s => s.totalScore / s.attempts < 60) ?
-                            '<li>Consider reviewing topics where you scored below 60%</li>' : ''}
-                        <li>Try to maintain consistent practice across all sections</li>
-                        <li>Review incorrect answers in the Wrong Questions section</li>
-                        ${bestScore - worstScore > 30 ? '<li>Work on consistency - your performance varies significantly</li>' : ''}
-                    </ul>
-                </div>
+            document.getElementById('overallStats').innerHTML = `
+                <p>Total Quizzes Taken: ${totalQuizzes}</p>
+                <p>Total Questions Answered: ${totalQuestions}</p>
+                <p>Correct Answers: ${totalCorrect}</p>
+                <p>Average Score: ${avgScore}%</p>
+                <p>Incorrect Questions: ${totalWrong}</p>
+                <p>Hard Questions Marked: ${totalHard}</p>
             `;
         }
 
         function retakeQuiz() {
-            startQuiz(currentSection, currentSubsection, false, isWrongQuestionsQuiz, isHardQuestionsQuiz);
+            startQuiz(currentSection, currentSubsection);
         }
 
-        function retakeSpecificQuiz(section, subsection) {
-            startQuiz(section, subsection);
-        }
-
-        // Keyboard support
-        document.addEventListener('keydown', function(event) {
-            if (document.getElementById('quiz').classList.contains('active')) {
-                if (event.key === 'ArrowRight' || event.key === 'Enter') {
-                    const nextBtn = document.getElementById('nextBtn');
-                    if (!nextBtn.disabled) {
-                        nextQuestion();
-                    }
-                } else if (event.key === 'ArrowLeft') {
-                    const prevBtn = document.getElementById('prevBtn');
-                    if (!prevBtn.disabled) {
-                        previousQuestion();
-                    }
-                } else if (['1', '2', '3', '4'].includes(event.key)) {
-                    const optionIndex = parseInt(event.key) - 1;
-                    const options = document.querySelectorAll('.option');
-                    if (options[optionIndex]) {
-                        const letter = options[optionIndex].querySelector('.option-letter').textContent.toLowerCase();
-                        selectAnswer(letter);
-                    }
-                }
+        function finishQuiz() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+                autoSaveInterval = null;
             }
-        });
+            const score = userAnswers.reduce((acc, answer, index) => 
+                answer === currentQuizData[index].correct ? acc + 1 : acc, 0);
+            const total = currentQuizData.length;
+            const percentage = (score / total) * 100;
+            let grade = '';
+            if (percentage >= 90) grade = 'A+';
+            else if (percentage >= 80) grade = 'A';
+            else if (percentage >= 70) grade = 'B';
+            else if (percentage >= 60) grade = 'C';
+            else grade = 'D';
 
-        // Confetti and sound effects
-        function celebrateCompletion(percentage) {
-            if (percentage >= 90) {
-                createConfetti();
+            const timeTaken = (new Date() - quizStartTime) / 1000;
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = Math.floor(timeTaken % 60);
+
+            document.getElementById('finalScore').textContent = `Score: ${score}/${total} (${percentage.toFixed(2)}%)`;
+            document.getElementById('resultDetails').innerHTML = `
+                <p>Grade: <span class="${getGradeClass(percentage)}">${grade}</span></p>
+                <p>Time Taken: ${minutes}m ${seconds}s</p>
+                <p>Section: ${currentSection}</p>
+                <p>Subsection: ${currentSubsection.replace('_', ' ')}</p>
+            `;
+
+            saveQuizHistory(score, total, percentage, grade, minutes, seconds);
+            showSection('results');
+
+            localStorage.removeItem('quizState');
+            const resumeBtn = document.getElementById('resumeQuizBtn');
+            if (resumeBtn) resumeBtn.remove();
+            const quizResumeBtn = document.getElementById('quizResumeBtn');
+            if (quizResumeBtn) quizResumeBtn.remove();
+
+            if (percentage >= 80) {
+                setTimeout(() => createConfetti(), 500);
             }
         }
 
         function createConfetti() {
-            const colors = ['#4facfe', '#00f2fe', '#f093fb', '#f5576c', '#28a745'];
-            const confettiCount = 50;
-
-            for (let i = 0; i < confettiCount; i++) {
+            const colors = ['#ff0', '#f00', '#0f0', '#00f', '#f0f', '#0ff'];
+            for (let i = 0; i < 100; i++) {
                 const confetti = document.createElement('div');
-                confetti.style.position = 'fixed';
-                confetti.style.width = '8px';
-                confetti.style.height = '8px';
+                confetti.className = 'confetti';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
                 confetti.style.left = Math.random() * 100 + 'vw';
-                confetti.style.top = '-10px';
-                confetti.style.borderRadius = '50%';
-                confetti.style.zIndex = '9999';
-                confetti.style.animation = `fall ${Math.random() * 2 + 1}s linear forwards`;
-
+                confetti.style.top = Math.random() * 100 + 'vh';
+                confetti.style.animation = `fall ${1 + Math.random() * 2}s ease`;
                 document.body.appendChild(confetti);
-
-                setTimeout(() => {
-                    confetti.remove();
-                }, 3000);
+                setTimeout(() => confetti.remove(), 3000);
             }
-        }
 
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes fall {
-                0% {
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .confetti {
+                    position: fixed;
+                    width: 10px;
+                    height: 10px;
+                    opacity: 0.8;
                     transform: translateY(-100vh) rotate(0deg);
-                    opacity: 1;
+                    z-index: 1000;
                 }
-                100% {
-                    transform: translateY(100vh) rotate(360deg);
-                    opacity: 0;
+                @keyframes fall {
+                    0% { transform: translateY(-100vh) rotate(0deg); }
+                    100% { transform: translateY(100vh) rotate(${Math.random() * 360}deg); }
                 }
-            }
-        `;
-        document.head.appendChild(style);
-
-        function playSound(type) {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            if (type === 'correct') {
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(1000, audioContext.currentTime + 0.1);
-            } else if (type === 'incorrect') {
-                oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-                oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.2);
-            }
-
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
+            `;
+            document.head.appendChild(style);
+            setTimeout(() => style.remove(), 3000);
         }
 
         function createMiniConfetti(element) {
+            const colors = ['#ff0', '#f00', '#0f0', '#00f', '#f0f', '#0ff'];
             const rect = element.getBoundingClientRect();
-            const colors = ['#28a745', '#20c997', '#17a2b8'];
-
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 30; i++) {
                 const confetti = document.createElement('div');
-                confetti.style.position = 'fixed';
-                confetti.style.width = '6px';
-                confetti.style.height = '6px';
+                confetti.className = 'mini-confetti';
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.left = (rect.left + rect.width / 2) + 'px';
-                confetti.style.top = (rect.top + rect.height / 2) + 'px';
-                confetti.style.borderRadius = '50%';
-                confetti.style.zIndex = '9999';
-                confetti.style.animation = `miniPop ${Math.random() * 0.5 + 0.5}s ease-out forwards`;
-
+                confetti.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                confetti.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                confetti.style.animation = `miniFall ${0.5 + Math.random()}s ease`;
                 document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 1500);
+            }
 
-                setTimeout(() => {
-                    confetti.remove();
-                }, 1000);
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .mini-confetti {
+                    position: fixed;
+                    width: 6px;
+                    height: 6px;
+                    opacity: 0.7;
+                    transform: translateY(0) rotate(0deg);
+                    z-index: 1000;
+                }
+                @keyframes miniFall {
+                    0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+                    100% { transform: translateY(50px) rotate(${Math.random() * 360}deg); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+            setTimeout(() => style.remove(), 1500);
+        }
+
+        function playSound(type) {
+            try {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.type = type === 'correct' ? 'sine' : 'square';
+                oscillator.frequency.setValueAtTime(type === 'correct' ? 440 : 220, audioContext.currentTime);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.error('Error playing sound:', e);
             }
         }
 
-        const miniStyle = document.createElement('style');
-        miniStyle.textContent = `
-            @keyframes miniPop {
-                0% {
-                    transform: scale(0) translate(0, 0);
-                    opacity: 1;
-                }
-                100% {
-                    transform: scale(1) translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px);
-                    opacity: 0;
-                }
-            }
-        `;
-        document.head.appendChild(miniStyle);
+       // Revision Mode Functions
+function initRevisionSelection() {
+    const sectionSelect = document.getElementById('revisionSectionSelect');
+    const subsectionSelect = document.getElementById('revisionSubsectionSelect');
+    const typeSelect = document.getElementById('revisionTypeSelect');
+    const startBtn = document.getElementById('startRevisionBtn');
 
-        function getMotivationalMessage(percentage) {
-            if (percentage >= 95) return "🏆 Outstanding! You're a quiz master!";
-            if (percentage >= 90) return "🌟 Excellent work! You're almost perfect!";
-            if (percentage >= 80) return "🎉 Great job! You really know your stuff!";
-            if (percentage >= 70) return "👍 Well done! You're on the right track!";
-            if (percentage >= 60) return "💪 Good effort! Keep practicing!";
-            if (percentage >= 50) return "📚 Not bad! Room for improvement!";
-            return "🚀 Don't give up! Every expert was once a beginner!";
+    sectionSelect.innerHTML = '<option value="">Select Section</option>';
+    Object.keys(quizData).forEach(section => {
+        sectionSelect.innerHTML += `<option value="${section}">${section}</option>`;
+    });
+
+    sectionSelect.onchange = () => {
+        subsectionSelect.disabled = true;
+        subsectionSelect.innerHTML = '<option value="">Select Subsection</option>';
+        startBtn.disabled = true;
+        if (sectionSelect.value) {
+            subsectionSelect.disabled = false;
+            Object.keys(quizData[sectionSelect.value]).forEach(subsection => {
+                subsectionSelect.innerHTML += `<option value="${subsection}">${subsection.replace('_', ' ')}</option>`;
+            });
         }
+        checkRevisionStartButton();
+    };
+
+    subsectionSelect.onchange = checkRevisionStartButton;
+    typeSelect.onchange = checkRevisionStartButton;
+
+    function checkRevisionStartButton() {
+        const type = typeSelect.value;
+        const section = sectionSelect.value;
+        const subsection = subsectionSelect.value;
+        const questions = type === 'wrong' 
+            ? getWrongQuestions(section, subsection)
+            : getHardQuestions(section, subsection);
+        startBtn.disabled = !section || !subsection || questions.length === 0;
+    }
+}
+
+function startRevision() {
+    const section = document.getElementById('revisionSectionSelect').value;
+    const subsection = document.getElementById('revisionSubsectionSelect').value;
+    const type = document.getElementById('revisionTypeSelect').value;
+
+    flashcardData = type === 'wrong' 
+        ? getWrongQuestions(section, subsection)
+        : getHardQuestions(section, subsection);
+
+    if (flashcardData.length === 0) {
+        alert(`No ${type} questions available for ${section} - ${subsection.replace('_', ' ')}.`);
+        return;
+    }
+
+    currentFlashcardIndex = 0;
+    isFlashcardFlipped = false;
+    document.getElementById('revisionContent').style.display = 'block';
+    loadFlashcard();
+    initFlashcardTouchGestures();
+}
+
+function loadFlashcard() {
+    if (!flashcardData[currentFlashcardIndex]) {
+        document.getElementById('revisionContent').style.display = 'none';
+        alert('No more flashcards to review.');
+        return;
+    }
+
+    const question = flashcardData[currentFlashcardIndex];
+    document.getElementById('flashcardQuestion').textContent = question.question;
+    document.getElementById('flashcardAnswer').textContent = `Correct Answer: ${question.options[question.correct]}`;
+    if (question.userAnswer) {
+        document.getElementById('flashcardAnswer').innerHTML += `<br>Your Answer: ${question.options[question.userAnswer] || 'None'} (Incorrect)`;
+    }
+
+    const flashcard = document.getElementById('flashcard');
+    flashcard.classList.remove('flipped');
+    isFlashcardFlipped = false;
+
+    document.getElementById('prevFlashcardBtn').disabled = currentFlashcardIndex === 0;
+    document.getElementById('nextFlashcardBtn').disabled = currentFlashcardIndex === flashcardData.length - 1;
+}
+
+function flipFlashcard() {
+    const flashcard = document.getElementById('flashcard');
+    flashcard.classList.toggle('flipped');
+    isFlashcardFlipped = !isFlashcardFlipped;
+}
+
+function prevFlashcard() {
+    if (currentFlashcardIndex > 0) {
+        currentFlashcardIndex--;
+        loadFlashcard();
+    }
+}
+
+function nextFlashcard() {
+    if (currentFlashcardIndex < flashcardData.length - 1) {
+        currentFlashcardIndex++;
+        loadFlashcard();
+    }
+}
+
+function initFlashcardTouchGestures() {
+    const flashcardContainer = document.querySelector('.flashcard-container');
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartTime = 0;
+    const swipeThreshold = 50; // Minimum distance for a swipe
+    const tapThreshold = 200; // Maximum duration for a tap (ms)
+    const touchDistanceThreshold = 10; // Maximum movement for a tap
+
+    flashcardContainer.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartTime = Date.now();
+    }, { passive: true });
+
+    flashcardContainer.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].clientX;
+        const touchDuration = Date.now() - touchStartTime;
+        const touchDistance = Math.abs(touchEndX - touchStartX);
+
+        if (touchDuration < tapThreshold && touchDistance < touchDistanceThreshold) {
+            // Detected a tap
+            flipFlashcard();
+        } else if (Math.abs(touchDistance) > swipeThreshold) {
+            // Detected a swipe
+            if (touchEndX < touchStartX && !document.getElementById('nextFlashcardBtn').disabled) {
+                // Swipe left -> next flashcard
+                nextFlashcard();
+            } else if (touchEndX > touchStartX && !document.getElementById('prevFlashcardBtn').disabled) {
+                // Swipe right -> previous flashcard
+                prevFlashcard();
+            }
+        }
+    }, { passive: true });
+}
     </script>
 </body>
 </html>
